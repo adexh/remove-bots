@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- WXT reads entrypoint options from meta tags; this becomes
+       options_ui.open_in_tab in the generated manifest. -->
+  <meta name="manifest.open_in_tab" content="true" />
+  <title>Remove bots: rules</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      max-width: 680px;
+      background: #202124;
+      color: #e8eaed;
+      font: 14px/1.55 "Google Sans", Roboto, -apple-system, "Segoe UI", sans-serif;
+    }
+    h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+    h2 { font-size: 14px; font-weight: 500; margin: 28px 0 6px; }
+    p { color: #9aa0a6; margin: 0 0 10px; }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 10px 12px;
+      background: #292a2d;
+      border: 1px solid #3c4043;
+      border-radius: 8px;
+      color: #e8eaed;
+      font: 13px/1.5 "SF Mono", Menlo, Consolas, monospace;
+      resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: #8ab4f8; }
+    label.row { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+    .bar { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+    button {
+      background: #8ab4f8;
+      border: 0;
+      border-radius: 18px;
+      color: #202124;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 500;
+      padding: 8px 20px;
+    }
+    button:hover { background: #aecbfa; }
+    #saved { color: #81c995; font-size: 13px; opacity: 0; transition: opacity 0.2s; }
+    #saved.show { opacity: 1; }
+    details { margin-top: 28px; border-top: 1px solid #3c4043; padding-top: 14px; }
+    summary { cursor: pointer; color: #8ab4f8; }
+    .vendors { columns: 3; column-gap: 20px; color: #9aa0a6; font-size: 12px; margin-top: 10px; }
+    code { background: #292a2d; border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Detection rules</h1>
+  <p>One rule per line. Plain text matches anywhere in the participant name, case insensitive. Wrap in slashes for a regular expression, for example <code>/^notes? by/i</code>.</p>
+
+  <h2>Always treat as a bot</h2>
+  <p>For in-house or newly launched notetakers the built-in list does not know yet.</p>
+  <textarea id="custom" spellcheck="false" placeholder="acme notetaker&#10;/^recorder \d+$/"></textarea>
+
+  <h2>Never remove</h2>
+  <p>Wins over every other rule. Useful when a teammate's display name trips the detector.</p>
+  <textarea id="allowlist" spellcheck="false" placeholder="Roberto Grain&#10;Fathom Nguyen"></textarea>
+
+  <label class="row">
+    <input type="checkbox" id="showHumans" />
+    <span>Expand the other-participants list by default</span>
+  </label>
+
+  <div class="bar">
+    <button id="save" type="button">Save</button>
+    <span id="saved">Saved</span>
+  </div>
+
+  <details>
+    <summary>Bots detected out of the box</summary>
+    <div class="vendors" id="vendors"></div>
+    <p style="margin-top:12px">Plus generic names containing notetaker, bot, recorder, transcription, AI assistant, or meeting notes.</p>
+  </details>
+
+  <script type="module" src="./options.js"></script>
+</body>
+</html>

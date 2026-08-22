@@ -1,0 +1,24 @@
+{
+  "name": "remove-bots-for-google-meet",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Find AI notetaker bots in a Google Meet call and remove them all in one click.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "compile": "wxt prepare",
+    "postinstall": "wxt prepare",
+    "test": "pnpm test:names && pnpm test:labels && pnpm test:dom && pnpm test:dom:bare",
+    "test:names": "node test/classify.test.js",
+    "test:labels": "node test/meet-labels.test.js",
+    "test:dom": "node test/run-dom.mjs",
+    "test:dom:bare": "node test/run-dom.mjs --page=fake-meet-bare.html",
+    "test:dom:show": "node test/run-dom.mjs --show"
+  },
+  "devDependencies": {
+    "wxt": "^0.21.4"
+  }
+}
