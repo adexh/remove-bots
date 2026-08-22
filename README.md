@@ -52,15 +52,17 @@ pnpm zip              # -> build/*.zip, for the Web Store
 
 ## How it works
 
-WXT owns `entrypoints/`; everything else is plain ES modules in `lib/`, which
-keeps the logic independent of the framework and importable from Node for tests.
+WXT owns `entrypoints/`; React renders the UI; everything else is plain ES
+modules in `lib/`, which keeps the logic independent of both and importable from
+Node for tests.
 
 ```
-wxt.config.ts          manifest fields WXT cannot infer
+wxt.config.ts          manifest fields WXT cannot infer, plus the React module
 entrypoints/           what WXT scans and builds
   background.js        service worker
   meet.content.js      content script for meet.google.com
-  options/             the rules page
+  options/             index.html + main.jsx + App.jsx
+components/            React: the button, the panel, the rows
 lib/                   plain ES modules, no framework imports
 public/icon/           16/32/48/128.png, picked up automatically
 ```
@@ -74,7 +76,11 @@ is built, and it is the only one you should expect to edit when Meet changes.
 | `lib/dom.js` | Generic DOM helpers: waiting, clicking, accessible names. | nothing |
 | `lib/meet.js` | **All Meet knowledge.** Selectors, label patterns, reading the roster, opening the panel, finding menu entries. | dom |
 | `lib/engine.js` | Scan and removal logic. Holds no selectors. | bots, dom, meet |
-| `lib/ui.js` | The in-page button and panel: list, checkboxes, live status. Rendered in a shadow root. | engine, meet |
+| `lib/store.js` | All UI state, held outside React so the service worker and the placement loop can drive it too. | engine |
+| `lib/placement.js` | Where the button lives: anchor priority, docking, relocation. Renders nothing. | meet |
+| `lib/styles.js` | The two shadow-root stylesheets, as strings. | nothing |
+| `lib/ui.js` | Builds the two shadow roots, mounts one React root, starts placement. | store, placement, styles, components |
+| `components/` | React. `App` renders the button and portals the panel; `Panel` and `ParticipantRow` render the list. State comes from `lib/store.js` through `useSyncExternalStore`. | store |
 | `entrypoints/meet.content.js` | Mounts the UI, relays the toolbar-icon toggle. Nothing else. | ui, meet |
 | `entrypoints/background.js` | Relays the icon click; opens the options page. | - |
 | `entrypoints/options/` | Your own detection rules. | bots |
@@ -85,7 +91,24 @@ listeners are all torn down when the extension reloads mid-call. That is what
 makes `pnpm dev` usable during a real meeting.
 
 Nothing in `lib/` imports from `wxt`, which is deliberate: the tests load those
-modules straight from disk with no build step.
+modules straight from disk.
+
+### Why the state lives outside React
+
+Two things that are not components need to drive the UI: the service worker,
+which toggles the panel when the toolbar icon is clicked, and the placement loop,
+which reports when the button moves so the panel can re-anchor. Rather than
+smuggle a React setter out to them, `lib/store.js` holds the state and components
+read it with `useSyncExternalStore`. One source of truth either way.
+
+There is also only **one** React root, mounted in the button's shadow root, with
+the panel portalled into a second shadow root on `<body>`. Two roots could not
+share state without extra plumbing; a portal can, and the panel still gets to be
+`position: fixed` without Meet's header clipping it.
+
+React costs about 180 kB in the content script bundle, which is the honest
+tradeoff for this refactor: the previous hand-rolled renderer built the same DOM
+in 45 kB total.
 
 **When a Meet update breaks something, start at the `SELECTORS` and `LABELS`
 tables at the top of `src/content/meet.js`.** Every non-obvious entry there
@@ -255,10 +278,11 @@ pnpm test:dom:show       # the main scenario in a visible browser
 The first two import `lib/` modules directly in Node, which is possible because
 nothing in `lib/` touches the DOM at import time or imports from `wxt`.
 
-`test/run-dom.mjs` serves the repo over HTTP, opens a harness page in headless
-Chrome, and drives it over the DevTools protocol. The HTTP server is not
-incidental: the harness imports the real `lib/` modules, and ES module imports
-are blocked on `file://` URLs.
+`test/run-dom.mjs` starts a **Vite dev server** over the repo, opens a harness
+page in headless Chrome, and drives it over the DevTools protocol. Vite is not
+incidental: the harness imports the real UI, which is JSX, and Vite transforms it
+on the fly. So the tests run against the same source the extension is built from,
+with no separate test bundle to drift out of date.
 
 `test/fake-meet.html` rebuilds the captured Meet DOM described above (lazy
 roster, the unlabelled header chip, decoy toolbar buttons placed ahead of it,

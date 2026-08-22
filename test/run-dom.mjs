@@ -7,15 +7,17 @@
  *   node test/run-dom.mjs --page=fake-meet-bare.html placement with no anchors
  *   node test/run-dom.mjs --show                     visible browser
  *
- * The page is served over HTTP rather than opened as a file: the harness imports
- * the real lib/ modules, and ES module imports are blocked on file:// URLs.
+ * The page is served by Vite rather than opened as a file. Two reasons: ES module
+ * imports are blocked on file:// URLs, and the harness imports the real UI, which
+ * is JSX. Vite transforms it on the fly, so the tests run against the same source
+ * the extension is built from, with no separate build step to fall out of date.
  */
 import { spawn } from 'node:child_process';
-import { createServer } from 'node:http';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { extname, join, dirname, resolve, normalize } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createServer } from 'vite';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
@@ -33,15 +35,6 @@ const CHROME_CANDIDATES = [
   '/usr/bin/chromium',
 ];
 
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-};
-
 async function findChrome() {
   if (process.env.CHROME) return process.env.CHROME;
   for (const path of CHROME_CANDIDATES) {
@@ -57,33 +50,33 @@ async function findChrome() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** Static server rooted at the repo, so /test and /lib both resolve. */
-function serve() {
-  return new Promise((ok) => {
-    const server = createServer(async (req, res) => {
-      const { pathname } = new URL(req.url, 'http://localhost');
-      const rel = normalize(decodeURIComponent(pathname)).replace(/^(\.\.[/\\])+/, '');
-      try {
-        const body = await readFile(join(ROOT, rel));
-        res.writeHead(200, { 'Content-Type': MIME[extname(rel)] || 'application/octet-stream' });
-        res.end(body);
-      } catch {
-        res.writeHead(404).end('not found');
-      }
-    });
-    server.listen(0, '127.0.0.1', () => ok(server));
+/** Vite dev server rooted at the repo, so /test, /lib and JSX all resolve. */
+async function serve() {
+  const server = await createServer({
+    root: ROOT,
+    configFile: false,
+    logLevel: 'error',
+    /* Bind explicitly: Vite's default host is `localhost`, which can resolve
+     * to ::1 only, and then Chrome's 127.0.0.1 request is refused. */
+    server: { host: '127.0.0.1', port: 0, strictPort: false },
+    /* Vite defaults .jsx to the automatic runtime; being explicit costs nothing
+     * and keeps this working if that default ever changes. */
+    esbuild: { jsx: 'automatic' },
   });
+  await server.listen();
+  return server;
 }
 
 async function main() {
   const chromePath = await findChrome();
   const server = await serve();
-  const url = `http://127.0.0.1:${server.address().port}/test/${PAGE_FILE}`;
+  const port = server.config.server.port || server.httpServer.address().port;
+  const url = `http://127.0.0.1:${port}/test/${PAGE_FILE}`;
   const profile = await mkdtemp(join(tmpdir(), 'rb-harness-'));
 
-  const port = 9200 + Math.floor(process.pid % 300);
+  const debugPort = 9200 + Math.floor(process.pid % 300);
   const args = [
-    `--remote-debugging-port=${port}`,
+    `--remote-debugging-port=${debugPort}`,
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--no-default-browser-check',
@@ -101,7 +94,7 @@ async function main() {
     } catch {
       /* already closed */
     }
-    server.close();
+    await server.close();
     chrome.kill('SIGKILL');
     /* Chrome keeps writing to its profile briefly after SIGKILL, so treat
      * cleanup as best effort: it must never decide the exit code. */
@@ -117,7 +110,7 @@ async function main() {
     for (let i = 0; i < 60 && !target; i++) {
       await sleep(250);
       try {
-        const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+        const list = await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json();
         target = list.find((t) => t.type === 'page' && t.url.startsWith('http://127.0.0.1'));
       } catch {
         /* not listening yet */
@@ -161,15 +154,23 @@ async function main() {
     await send('Runtime.enable');
 
     /* The harness stamps data-harness on <body> when every assertion is in. */
-    const frame = await send('Runtime.evaluate', {
+    const evaluate = send('Runtime.evaluate', {
       expression: `
         new Promise((done) => {
           const started = Date.now();
           (function poll() {
-            const flag = document.body.getAttribute('data-harness');
-            if (flag) return done({ flag, out: document.getElementById('out').textContent });
-            if (Date.now() - started > 90000) {
-              return done({ flag: 'timeout', out: document.getElementById('out').textContent });
+            try {
+              const out = document.getElementById('out');
+              const flag = document.body.getAttribute('data-harness');
+              if (flag && out) return done({ flag, out: out.textContent });
+              if (Date.now() - started > 90000) {
+                return done({
+                  flag: 'timeout',
+                  out: out ? out.textContent : 'no #out element; page is ' + location.href,
+                });
+              }
+            } catch (err) {
+              return done({ flag: 'error', out: 'poll threw: ' + err.message });
             }
             setTimeout(poll, 200);
           })();
@@ -178,6 +179,15 @@ async function main() {
       awaitPromise: true,
       returnByValue: true,
     });
+
+    /* Belt and braces: if the page never runs script at all, awaitPromise never
+     * settles, so race it rather than hanging the test run. */
+    const frame = await Promise.race([
+      evaluate,
+      sleep(120000).then(() => ({
+        result: { result: { value: { flag: 'stalled', out: 'page never reported' } } },
+      })),
+    ]);
 
     const report = frame.result?.result?.value;
     if (!report) throw new Error('harness never reported: ' + JSON.stringify(frame.result));

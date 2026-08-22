@@ -1,6 +1,9 @@
 import { defineConfig } from 'wxt';
 
 export default defineConfig({
+  /* Adds the React plugin and its auto-imports. */
+  modules: ['@wxt-dev/module-react'],
+
   /*
    * Default is ".output", but a dot-prefixed folder is hidden in Finder and the
    * Chrome "Load unpacked" picker, which makes loading the build needlessly
