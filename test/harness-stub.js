@@ -39,13 +39,22 @@
    */
   var MANY = Number(window.__MANY__) || 0;
 
+  /*
+   * The same call seen from a guest's seat, set by test/fake-meet-guest.html.
+   * Three differences, all of them real: the "Meeting host" badge is on
+   * someone else's row, the bottom toolbar has no Host controls button, and no
+   * row menu offers "Remove from the call" - Meet simply leaves the entry out
+   * for a participant who is not the host.
+   */
+  var GUEST = !!window.__GUEST__;
+
   var SPACE = 'spaces/KEi-HMinAxkB/devices/';
 
   var PEOPLE = [
-    { key: '113', name: 'Adesh Tamrakar', self: true, host: true, tile: true },
+    { key: '113', name: 'Adesh Tamrakar', self: true, host: !GUEST, tile: true },
     { key: '114', name: "Adesh's Fathom Notetaker", visitor: true, tile: true, video: true, confirm: 'overlay' },
     { key: '115', name: "Adesh's Otter.ai Notetaker", visitor: true, confirm: 'none' },
-    { key: '116', name: 'Ada Lovelace' },
+    { key: '116', name: 'Ada Lovelace', host: GUEST },
     { key: '117', name: 'Sarah (Notes)', visitor: true, noRemove: true }
   ];
 
@@ -205,7 +214,11 @@
 
   var toolbar = document.createElement('div');
   toolbar.style.cssText = 'display:flex;gap:6px;margin-bottom:12px';
-  (BARE ? [] : [['Chat with everyone', 'chat'], ['Meeting tools', 'apps'], ['Host controls', 'lock_person']])
+  var TOOLBAR = [['Chat with everyone', 'chat'], ['Meeting tools', 'apps']];
+  /* Meet shows Host controls to the host and co-hosts only. */
+  if (!GUEST) TOOLBAR.push(['Host controls', 'lock_person']);
+
+  (BARE ? [] : TOOLBAR)
     .forEach(function (pair) {
       var button = document.createElement('button');
       button.setAttribute('aria-label', pair[0]);
@@ -266,13 +279,15 @@
     name.textContent = person.name;
     row.appendChild(name);
 
-    if (person.self) {
-      ['(You)', 'Meeting host'].forEach(function (word) {
+    /* Two separate badges in the capture, and separate facts: a guest's own
+     * row carries "(You)" with no host badge, and the host's row carries the
+     * host badge with no "(You)". */
+    (person.self ? ['(You)'] : []).concat(person.host ? ['Meeting host'] : [])
+      .forEach(function (word) {
         var chipSpan = document.createElement('span');
         chipSpan.textContent = word;
         row.appendChild(chipSpan);
       });
-    }
     if (person.visitor) {
       ['domain_disabled', 'Visitor'].forEach(function (word) {
         var badge = document.createElement('span');
@@ -350,7 +365,7 @@
       ['link', 'Ask to pair your tiles'],
       ['videocam_off', "Don't watch"]
     ];
-    if (!person.noRemove) entries.push(['remove_circle_outline', 'Remove from the call']);
+    if (!person.noRemove && !GUEST) entries.push(['remove_circle_outline', 'Remove from the call']);
 
     entries.forEach(function (pair) {
       var li = document.createElement('li');

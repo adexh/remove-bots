@@ -1,5 +1,6 @@
 import { ParticipantRow } from './ParticipantRow.jsx';
 import {
+  allowed,
   matches,
   openOptions,
   removableBots,
@@ -9,6 +10,7 @@ import {
   selectedIds,
   setOpen,
   setQuery,
+  tryAnyway,
 } from '../lib/store.js';
 import { useStore } from './useStore.js';
 
@@ -76,6 +78,7 @@ export function Panel({ anchorRect }) {
   const hiddenChosen = chosen.filter((id) => !visibleIds.has(id)).length;
 
   const showSearch = state.participants.length > SEARCH_THRESHOLD;
+  const canRemove = allowed();
 
   return (
     <div className="panel" style={place(anchorRect)}>
@@ -98,6 +101,21 @@ export function Panel({ anchorRect }) {
 
       <p className="summary">{state.summary}</p>
       {state.notice ? <p className="notice">{state.notice}</p> : null}
+
+      {/* Said before a run rather than after it: a guest clicking Remove gets
+          a row of red failures, which reads like a broken extension. */}
+      {canRemove ? null : (
+        <div className="notice warn">
+          <p>
+            You are not the host of this meeting, so Meet will probably refuse to remove
+            anyone. Ask the host to remove them, or to make you a co-host.
+          </p>
+          {state.roleWhy ? <p className="why">Read from Meet: {state.roleWhy}.</p> : null}
+          <button type="button" className="chip" onClick={tryAnyway}>
+            Try anyway
+          </button>
+        </div>
+      )}
 
       {showSearch ? (
         <div className="search">
@@ -181,7 +199,7 @@ export function Panel({ anchorRect }) {
         <button
           type="button"
           className="primary"
-          disabled={state.running || state.scanning || chosen.length === 0}
+          disabled={state.running || state.scanning || chosen.length === 0 || !canRemove}
           onClick={removeSelected}
         >
           {chosen.length

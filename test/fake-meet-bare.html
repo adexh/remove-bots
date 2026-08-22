@@ -1,26 +1,125 @@
 <!doctype html>
-<html lang="en">
+<!--
+  The worst case for placement, on a page shaped like the real one.
+
+  The head and the shell here are copied from a DOM capture of a live call
+  (Aug 2026 Meet build) rather than invented, because four things about that
+  page reach injected UI and none of them existed in a fixture that was a
+  plain white document:
+
+    - Meet sets a <base href>, so every relative URL in the page, SVG
+      fragment references included, resolves against meet.google.com.
+    - The call lives at /xxx-xxxx-xxx, which is the only thing meet.inCall()
+      has to go on before anything has rendered.
+    - The app shell is a <main>, and gapi leaves nodes of its own directly
+      under <body>: between them, every branch of overlayRoots().
+    - <body> is a locked, non-scrolling, full-viewport shell, so a fixed
+      fallback that lands off screen cannot be scrolled back into view.
+-->
+<html lang="en-GB" dir="ltr">
 <head>
   <meta charset="utf-8" />
+  <!-- Real, and the reason the scripts below are loaded from absolute paths:
+       with this in place, src="harness-stub.js" would resolve to
+       https://meet.google.com/harness-stub.js. -->
+  <base href="https://meet.google.com/" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="referrer" content="origin-when-cross-origin" />
+  <link rel="canonical" href="https://meet.google.com/zvh-sowq-ews" />
   <title>Remove bots: fake Meet harness</title>
   <style>
-    body { font: 13px/1.5 ui-monospace, Menlo, monospace; padding: 16px; }
-    h1 { font-size: 15px; }
-    #out { background: #f4f4f4; padding: 12px; white-space: pre-wrap; }
-    body[data-harness="pass"] #out { border-left: 4px solid #188038; }
-    body[data-harness="fail"] #out { border-left: 4px solid #c5221f; }
+    /* Meet's own shell: dark, full height, and it does not scroll. Locked on
+       both elements, because overflow on <body> alone still leaves the
+       viewport scrollable once the shell overflows it. */
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      margin: 0; background: #202124; color: #e3e3e3;
+      font: 13px/1.5 ui-monospace, Menlo, monospace;
+    }
+    main { display: block; height: 100%; padding: 16px; box-sizing: border-box;
+           overflow: hidden; }
+    h1 { font-size: 15px; font-weight: 500; margin: 0 0 12px; }
+    /* Docked bottom-left, out of the way of the button's floating corner and
+       of the chip grid it later moves to. */
+    #out {
+      position: fixed; left: 16px; bottom: 16px; max-width: 46vw; max-height: 60vh;
+      overflow: auto; margin: 0; padding: 12px; border-radius: 8px;
+      background: #292a2b; border-left: 4px solid #444746; white-space: pre-wrap;
+    }
+    body[data-harness="pass"] #out { border-left-color: #188038; }
+    body[data-harness="fail"] #out { border-left-color: #c5221f; }
   </style>
 </head>
 <body>
-  <h1>Fake Meet with nothing to dock beside</h1>
-  <div id="app"></div>
-  <h1>Content script results</h1>
+  <script>
+    /*
+     * A real call is at /xxx-xxxx-xxx; the capture's canonical URL is
+     * /zvh-sowq-ews. Set before anything mounts, because on a cold join the
+     * path is all inCall() has: no roster, no leave button, no header.
+     *
+     * Spelled out against location.origin because of the <base href> above:
+     * a bare "/zvh-sowq-ews" resolves against meet.google.com, and pushing a
+     * cross-origin URL is a SecurityError. The dev server has nothing at this
+     * path, so this page does not survive a manual reload; it is not meant to
+     * be reloaded, and test/fake-meet-manual.html is the page to poke at by
+     * hand.
+     */
+    try {
+      history.replaceState(null, '', location.origin + '/zvh-sowq-ews');
+    } catch (err) {
+      /* A file:// open, where there is no origin to push to. The tiles keep
+       * inCall() true, so the scenario still runs. */
+    }
+    window.__BARE__ = true;
+  </script>
+
+  <!-- Meet's app shell. A <main>, which is how overlayRoots() knows to walk
+       past it without checking its contents. -->
+  <main>
+    <h1>Fake Meet with nothing to dock beside</h1>
+    <div id="app"></div>
+  </main>
+
+  <!--
+    What gapi leaves under <body> on the real page: an inline stylesheet and a
+    1px container holding its OAuth relay iframe.
+
+    The stylesheet is skipped by tag. The container is not: an attribute-light
+    <div> under <body> is exactly what a portalled menu looks like, so
+    overlayRoots() hands it to the text search on every poll. What has to hold
+    is that nothing inside it reads as a menu entry.
+  -->
+  <style>
+    /* Parked off screen the way gapi parks it, which is also what keeps it out
+       of the page's scrollable area. */
+    .gapi-hidden { position: absolute; top: -10000px; left: -10000px; width: 1px; height: 1px; }
+  </style>
+  <div id=":0.container" class="gapi-hidden">
+    <iframe name="oauth2relay-remove-bots" title="gapi OAuth relay"
+            style="width:1px;height:1px;border:0"></iframe>
+  </div>
+
   <pre id="out">running...</pre>
 
-  <script>window.__BARE__ = true;</script>
-  <script src="harness-stub.js"></script>
-  <!-- A module, so it can import lib/ directly and mount the UI the way
-       the content script entrypoint does. -->
-  <script type="module" src="harness-bare.js"></script>
+  <!--
+    Loaded by hand, because of the <base> above: it re-homes every src on the
+    page, path-absolute ones included, so "/test/harness-stub.js" would be
+    fetched from meet.google.com. Inline script is exempt, and location.href
+    is not affected by <base>, so the two URLs are built from that instead.
+
+    The stub has to finish before the module runs, hence the onload; the module
+    then resolves its own imports against its own URL, which is back on the dev
+    server where they exist.
+  -->
+  <script>
+    (function () {
+      function fromHere(path) { return new URL(path, location.href).href; }
+      var stub = document.createElement('script');
+      stub.src = fromHere('/test/harness-stub.js');
+      stub.onload = function () { import(fromHere('/test/harness-bare.js')); };
+      document.body.appendChild(stub);
+    })();
+  </script>
 </body>
 </html>

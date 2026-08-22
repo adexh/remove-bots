@@ -14,7 +14,10 @@ same panel if you prefer the keyboard route.
 
 Removing participants requires host permissions in the meeting. The extension
 does not grant you anything you do not already have, it just clicks faster than
-you can.
+you can. It does check first: if the roster says someone else is the host and
+Meet is not offering you its host controls, the panel says so and holds the
+Remove button back, with a **Try anyway** override for the case where host
+management is off and any participant may remove another.
 
 ## Getting started
 
@@ -277,25 +280,37 @@ defensive but not future proof. If a Meet update breaks it, the failure is loud
 rather than silent: rows report "failed" with the reason instead of pretending
 to succeed. The usual causes are:
 
-- You are not the host and host controls are not delegated to you.
+- You are not the host and host controls are not delegated to you. The panel
+  usually catches this before the run and says so, but only where it can read
+  the evidence: the host badge in a language it knows, on a row Meet has
+  actually rendered.
 - Meet is in a language whose "Remove from meeting" wording is not in the match
-  list yet (`REMOVE_TEXT` in `src/shared/bots.js`).
+  list yet (`LABELS.remove` in `lib/meet.js`).
 - Meet changed its participant row markup.
 
 ## Testing
 
-Four suites, no test framework and nothing extra to install:
+Six suites, no test framework and nothing extra to install:
 
 ```sh
-pnpm test                # all of it, 115 assertions
+pnpm test                # all of it, 178 assertions
 pnpm test:names          # 56: the name classifier
-pnpm test:labels         # 13: Meet's selector and label tables
-pnpm test:dom            # 35: the real UI driven in headless Chrome
-pnpm test:dom:bare       # 11: placement when Meet has rendered nothing yet
+pnpm test:labels         # 17: Meet's selector and label tables
+pnpm test:dom            # 45: the real UI driven in headless Chrome
+pnpm test:dom:bare       # 19: placement when Meet has rendered nothing yet
 pnpm test:dom:many       # 21: 50 bots, scrolling and search
+pnpm test:dom:guest      # 20: the same call from a guest's seat
 pnpm test:dom:show       # the main scenario in a visible browser
 pnpm test:dom:many:show  # 50 bots in a visible browser, to look at it
+pnpm test:dom:guest:show # the guest seat in a visible browser
 ```
+
+`test/fake-meet-bare.html` carries the parts of the real page that reach
+injected UI: Meet's `<base href>`, which re-homes every relative URL including
+path-absolute script `src`es; the `/xxx-xxxx-xxx` path that is the only sign of
+being in a call before anything renders; a `<main>` app shell and gapi's
+leftovers sharing `<body>` with any portalled menu; and a locked, non-scrolling
+viewport, so a button placed off screen cannot be scrolled back into view.
 
 Any scenario also takes `--screenshot=<file>`:
 
@@ -309,6 +324,32 @@ picture showed the Remove button half off the viewport.
 
 The first two import `lib/` modules directly in Node, which is possible because
 nothing in `lib/` touches the DOM at import time or imports from `wxt`.
+
+### Testing it by hand, without a real call
+
+`test/fake-meet-manual.html` is the same fake Meet with no harness attached, for
+driving the real extension yourself. Everything you see beyond the fake roster
+comes from the installed content script, so what you are exercising is the
+bundle Chrome runs.
+
+```sh
+pnpm build:dev   # a development build, self-contained
+pnpm play        # serves the repo and opens the page on 127.0.0.1:5174
+```
+
+Then load `build/chrome-mv3-dev` unpacked on `chrome://extensions` and reload
+the tab. Development builds already match `localhost`, `127.0.0.1` and
+`file://`, so there is nothing to edit; published builds match Meet only.
+Opening the page from disk instead of serving it also needs "Allow access to
+file URLs" ticking on the extension's card.
+
+Scenarios come off the query string, and combine:
+
+```
+?bots=20   a crowded roster
+?guest=1   you are not the host: the warning and the disabled Remove
+?bare=1    no toolbar and a late header chip, the worst case for placement
+```
 
 `test/run-dom.mjs` starts a **Vite dev server** over the repo, opens a harness
 page in headless Chrome, and drives it over the DevTools protocol. Vite is not

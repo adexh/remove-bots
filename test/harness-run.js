@@ -117,6 +117,9 @@ import { mount } from '../lib/ui.js';
       'found it without clicking Chat/Tools/Host controls/legacy/the header badge ('
       + (harness.strayClicks().join('; ') || 'none') + ')');
     check(/3 bots found/.test(summary()), 'summary reports 3 bots: "' + summary() + '"');
+    check(!panel().querySelector('.notice.warn'),
+      'no not-the-host warning: our own row carries the host badge');
+    check(!panel().querySelector('.primary').disabled, 'Remove is live for a host');
 
     check(!!rowFor('114') && !!rowFor('115') && !!rowFor('117'), 'all three bots are listed');
     check(textOf(rowFor('114'), '.row-name').indexOf("Adesh's Fathom Notetaker") === 0,

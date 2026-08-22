@@ -96,6 +96,31 @@ check('visitor token matches a whole leaf label only', function () {
   assert.ok(!L.visitorToken.test('Visitacion Reyes'));
 });
 
+check('host and co-host badges are recognised', function () {
+  ['Meeting host', 'Host', 'Co-host', 'Cohost', 'You (host)'].forEach(function (badge) {
+    assert.ok(L.hostBadge.test(badge), JSON.stringify(badge) + ' should read as a host badge');
+  });
+});
+
+check('host badge matches a whole leaf label only', function () {
+  /* Otherwise a name, or a sentence about the host, promotes a guest to host
+   * and the warning never shows. */
+  ['Ghost', 'Hostetler', 'Ada Lovelace', 'The host ended the call',
+    "Adesh's Fathom Notetaker"].forEach(function (line) {
+    assert.ok(!L.hostBadge.test(line), JSON.stringify(line) + ' should not read as a host badge');
+  });
+});
+
+check('the Host controls button is told apart from its neighbours', function () {
+  assert.ok(L.hostControls.test('Host controls'));
+  assert.ok(L.hostControls.test('Host management'));
+  ['Meeting tools', 'Chat with everyone', 'People', 'Participants', 'Host'].forEach(
+    function (label) {
+      assert.ok(!L.hostControls.test(label),
+        label + ' should not read as the host controls button');
+    });
+});
+
 check('own row is identified by its chip', function () {
   assert.ok(L.selfChip.test('(You)'));
   assert.ok(L.selfChip.test('You'));

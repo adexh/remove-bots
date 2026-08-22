@@ -7,17 +7,21 @@
   "license": "MIT",
   "scripts": {
     "dev": "wxt",
+    "build:dev": "wxt build -m development",
+    "play": "vite --host 127.0.0.1 --port 5174 --open /test/fake-meet-manual.html",
     "build": "wxt build",
     "zip": "wxt zip",
     "compile": "wxt prepare",
     "postinstall": "wxt prepare",
-    "test": "pnpm test:names && pnpm test:labels && pnpm test:dom && pnpm test:dom:bare && pnpm test:dom:many",
+    "test": "pnpm test:names && pnpm test:labels && pnpm test:dom && pnpm test:dom:bare && pnpm test:dom:many && pnpm test:dom:guest",
     "test:names": "node test/classify.test.js",
     "test:labels": "node test/meet-labels.test.js",
     "test:dom": "node test/run-dom.mjs",
     "test:dom:bare": "node test/run-dom.mjs --page=fake-meet-bare.html",
     "test:dom:show": "node test/run-dom.mjs --show",
     "test:dom:many": "node test/run-dom.mjs --page=fake-meet-many.html",
+    "test:dom:guest": "node test/run-dom.mjs --page=fake-meet-guest.html",
+    "test:dom:guest:show": "node test/run-dom.mjs --page=fake-meet-guest.html --show",
     "test:dom:many:show": "node test/run-dom.mjs --page=fake-meet-many.html --show"
   },
   "devDependencies": {

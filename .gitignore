@@ -3,3 +3,7 @@ build/
 .output/
 .wxt/
 stats.html
+
+# Saved copies of a real Meet page, for reading its markup. Large, and
+# nobody else needs them: the findings live in test/harness-stub.js.
+meet-temp/

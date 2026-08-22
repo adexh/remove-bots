@@ -7,7 +7,9 @@
  * must move there.
  */
 import { mount } from '../lib/ui.js';
-import { chipGrid, peopleControl, toolbarAnchor } from '../lib/meet.js';
+import {
+  chipGrid, findRemoveEntry, inCall, overlayRoots, peopleControl, toolbarAnchor
+} from '../lib/meet.js';
 
 (function () {
   'use strict';
@@ -51,6 +53,31 @@ import { chipGrid, peopleControl, toolbarAnchor } from '../lib/meet.js';
      */
     check(!peopleControl() && !toolbarAnchor() && !chipGrid(),
       'scenario check: no dockable control exists at load');
+    check(document.baseURI === 'https://meet.google.com/',
+      'scenario check: the page carries Meet\'s <base href> (' + document.baseURI + ')');
+    /* Asked behaviourally rather than by measuring: what matters is that a
+     * button placed off screen cannot be scrolled back into view, which is
+     * what makes the placement assertions below worth making. */
+    window.scrollTo(0, 400);
+    check(window.scrollY === 0,
+      'scenario check: the shell does not scroll, so off-screen is unreachable');
+
+    /* On a cold join the roster, the leave button and the header are all still
+     * to come, and the meeting path is the only thing saying we are in a call
+     * at all. */
+    check(inCall(), 'reads the meeting path as being in a call (' + location.pathname + ')');
+
+    /* Meet's own shell and gapi's leftovers share <body> with any portalled
+     * menu, so the overlay walk has to be able to tell them apart. */
+    var roots = overlayRoots();
+    check(!roots.some(function (node) { return node.tagName === 'MAIN'; }),
+      'the app shell is not treated as an overlay root');
+    check(!roots.some(function (node) {
+      return ['SCRIPT', 'STYLE', 'LINK'].indexOf(node.tagName) !== -1;
+    }), 'nor are the scripts and stylesheets under <body>');
+    check(roots.some(function (node) { return node.id === ':0.container'; }),
+      "gapi's container is walked like any other portal-shaped div");
+    check(!findRemoveEntry(), 'and nothing in it reads as a remove entry');
 
     /* Well inside the grace period. */
     await sleep(1200);
@@ -61,6 +88,15 @@ import { chipGrid, peopleControl, toolbarAnchor } from '../lib/meet.js';
     if (!floated) return finish();
 
     check(host().parentElement === document.body, 'falls back to floating when nothing renders');
+
+    /* The payoff of the <base href> above: an icon drawn with a fragment
+     * reference would resolve against meet.google.com and come out blank. */
+    var icon = host().shadowRoot.querySelector('svg');
+    var iconBox = icon && icon.getBoundingClientRect();
+    check(!!iconBox && iconBox.width > 8 && iconBox.height > 8,
+      'the icon still draws under a <base href> (' +
+      (iconBox ? Math.round(iconBox.width) + 'x' + Math.round(iconBox.height) : 'missing') + ')');
+
     var box = host().getBoundingClientRect();
     var style = getComputedStyle(host());
     check(style.position === 'fixed', 'floating placement is fixed to the viewport');

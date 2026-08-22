@@ -59,7 +59,45 @@
     btns.forEach(b => log('      btn:', desc(b), '| text:', JSON.stringify(T(b).slice(0, 20)), '| visible:', vis(b)));
   });
 
-  log('=== 4. Row menu structure ===');
+  log('=== 4. Host signals: can this user remove anyone? ===');
+  const HOST_BADGE = /^(?:meeting host|host|co-?host|you \(host\))$/i;
+  const SELF_CHIP = /^(?:you|\(you\)|you \(host\))$/i;
+  const leaves = n => [...n.querySelectorAll('span, div, i')]
+    .filter(c => !c.children.length).map(T).filter(Boolean);
+  const named = [...document.querySelectorAll(
+    'button[aria-label], [role="button"][aria-label], button[aria-labelledby], [role="button"][aria-labelledby]')];
+  const nameOf = n => {
+    const label = n.getAttribute('aria-label');
+    if (label) return label.trim();
+    const ref = n.getAttribute('aria-labelledby') || '';
+    return ref.split(/\s+/).map(id => T(document.getElementById(id))).filter(Boolean).join(' ');
+  };
+  const hostBtns = named.filter(n => /\bhost\b/i.test(nameOf(n)));
+  log('buttons whose name mentions "host":', hostBtns.length);
+  hostBtns.forEach(n => log('  ', JSON.stringify(nameOf(n)), '->', desc(n),
+      '| visible:', vis(n), '| disabled:', !!n.disabled || n.getAttribute('aria-disabled') === 'true'));
+
+  let selfRow = null, otherHost = [];
+  items.forEach(row => {
+    const badges = leaves(row).filter(t => HOST_BADGE.test(t) || SELF_CHIP.test(t));
+    if (badges.length) log('  row', JSON.stringify((row.getAttribute('aria-label') || '').slice(0, 40)),
+        'badges:', JSON.stringify(badges));
+    const isSelf = !!row.querySelector('[data-is-self="true"]') ||
+      row.getAttribute('data-is-self') === 'true' ||
+      leaves(row).some(t => SELF_CHIP.test(t));
+    if (isSelf && !selfRow) selfRow = row;
+    else if (leaves(row).some(t => HOST_BADGE.test(t))) otherHost.push(row);
+  });
+  log('own row found:', !!selfRow,
+      '| own row badged host:', !!selfRow && leaves(selfRow).some(t => HOST_BADGE.test(t)),
+      '| other rows badged host:', otherHost.length);
+  log('=> hostRole() would say:',
+      selfRow && leaves(selfRow).some(t => HOST_BADGE.test(t)) ? 'host (own badge)'
+        : hostBtns.some(n => /\bhost controls?\b|\bhost management\b/i.test(nameOf(n)) && vis(n)
+            && !n.disabled && n.getAttribute('aria-disabled') !== 'true') ? 'host (host controls)'
+        : selfRow && otherHost.length ? 'guest' : 'unknown');
+
+  log('=== 5. Row menu structure ===');
   const target = items.find(n => /fathom|otter|notetaker|fireflies|bot|notes/i.test(
       (n.getAttribute('aria-label') || '') + ' ' + T(n)));
   if (!target) { log('no bot-looking row found, skipping menu dump'); }

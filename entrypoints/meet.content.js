@@ -5,8 +5,21 @@
 import { mount, toggle, isOpen } from '../lib/ui.js';
 import { inCall } from '../lib/meet.js';
 
+const MEET = ['https://meet.google.com/*'];
+
+/*
+ * The local fake-Meet page, test/fake-meet-manual.html, so the extension can
+ * be driven by hand without joining a real call. Ports are not part of a match
+ * pattern, so one localhost entry covers every dev server; file:// also needs
+ * "Allow access to file URLs" ticked on chrome://extensions.
+ *
+ * Development builds only. A published build has no business asking for access
+ * to whatever else is running on localhost.
+ */
+const PLAYGROUND = ['http://localhost/*', 'http://127.0.0.1/*', 'file:///*'];
+
 export default defineContentScript({
-  matches: ['https://meet.google.com/*'],
+  matches: import.meta.env.DEV ? MEET.concat(PLAYGROUND) : MEET,
   runAt: 'document_idle',
   allFrames: false,
 
