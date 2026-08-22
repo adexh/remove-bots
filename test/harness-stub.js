@@ -32,6 +32,13 @@
   var BARE = !!window.__BARE__;
   var CHIP_DELAY_MS = BARE ? 4000 : 3000;
 
+  /*
+   * A crowded meeting. Set by test/fake-meet-many.html, which exists both to
+   * assert the list scrolls and filters, and to eyeball the panel with a
+   * realistic pile of notetakers in it (--show).
+   */
+  var MANY = Number(window.__MANY__) || 0;
+
   var SPACE = 'spaces/KEi-HMinAxkB/devices/';
 
   var PEOPLE = [
@@ -41,6 +48,26 @@
     { key: '116', name: 'Ada Lovelace' },
     { key: '117', name: 'Sarah (Notes)', visitor: true, noRemove: true }
   ];
+
+  if (MANY) {
+    /* Real bot names as they actually appear: possessive, vendor-branded, and
+     * long enough to test truncation. */
+    var VENDORS = [
+      "Adesh's Otter.ai Notetaker", 'Fireflies.ai Notetaker', 'Fathom Notetaker',
+      'Read AI Notetaker', 'tl;dv recorder', 'Avoma Assistant', 'Gong.io Notetaker',
+      'Spinach.io', 'Sembly AI', 'Circleback Notetaker', 'MeetGeek.ai',
+      'Supernormal Notetaker', 'Fellow.app', 'Sybill AI', 'Bluedot recorder',
+      'Colibri.ai', 'Airgram', 'Noota', 'Grain', 'Laxis', 'Wudpecker',
+      'Scribbl', 'Rewatch', 'Vowel', 'Clari Copilot'
+    ];
+    for (var n = 0; n < MANY; n++) {
+      PEOPLE.push({
+        key: String(200 + n),
+        name: VENDORS[n % VENDORS.length] + ' ' + (Math.floor(n / VENDORS.length) + 1),
+        visitor: true
+      });
+    }
+  }
 
   PEOPLE.forEach(function (person) { person.id = SPACE + person.key; });
 

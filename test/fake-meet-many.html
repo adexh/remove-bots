@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Remove bots: fake Meet harness</title>
+  <style>
+    body { font: 13px/1.5 ui-monospace, Menlo, monospace; padding: 16px; }
+    h1 { font-size: 15px; }
+    #out { background: #f4f4f4; padding: 12px; white-space: pre-wrap; }
+    body[data-harness="pass"] #out { border-left: 4px solid #188038; }
+    body[data-harness="fail"] #out { border-left: 4px solid #c5221f; }
+  </style>
+</head>
+<body>
+  <h1>Fake Meet with 50 notetaker bots</h1>
+  <div id="app"></div>
+  <h1>Content script results</h1>
+  <pre id="out">running...</pre>
+
+  <script>window.__MANY__ = 50;</script>
+  <script src="harness-stub.js"></script>
+  <!-- A module, so it can import lib/ directly and mount the UI the way
+       the content script entrypoint does. -->
+  <script type="module" src="harness-many.js"></script>
+  
+</body>
+</html>

@@ -11,12 +11,14 @@
     "zip": "wxt zip",
     "compile": "wxt prepare",
     "postinstall": "wxt prepare",
-    "test": "pnpm test:names && pnpm test:labels && pnpm test:dom && pnpm test:dom:bare",
+    "test": "pnpm test:names && pnpm test:labels && pnpm test:dom && pnpm test:dom:bare && pnpm test:dom:many",
     "test:names": "node test/classify.test.js",
     "test:labels": "node test/meet-labels.test.js",
     "test:dom": "node test/run-dom.mjs",
     "test:dom:bare": "node test/run-dom.mjs --page=fake-meet-bare.html",
-    "test:dom:show": "node test/run-dom.mjs --show"
+    "test:dom:show": "node test/run-dom.mjs --show",
+    "test:dom:many": "node test/run-dom.mjs --page=fake-meet-many.html",
+    "test:dom:many:show": "node test/run-dom.mjs --page=fake-meet-many.html --show"
   },
   "devDependencies": {
     "@wxt-dev/module-react": "^1.2.2",

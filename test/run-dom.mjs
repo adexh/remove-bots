@@ -6,6 +6,7 @@
  *   node test/run-dom.mjs                            main scenario
  *   node test/run-dom.mjs --page=fake-meet-bare.html placement with no anchors
  *   node test/run-dom.mjs --show                     visible browser
+ *   node test/run-dom.mjs --screenshot=look.png      save what it looks like
  *
  * The page is served by Vite rather than opened as a file. Two reasons: ES module
  * imports are blocked on file:// URLs, and the harness imports the real UI, which
@@ -13,7 +14,7 @@
  * the extension is built from, with no separate build step to fall out of date.
  */
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +26,8 @@ const ROOT = resolve(HERE, '..');
 const pageArg = process.argv.find((arg) => arg.startsWith('--page='));
 const PAGE_FILE = pageArg ? pageArg.slice('--page='.length) : 'fake-meet.html';
 const SHOW = process.argv.includes('--show');
+const shotArg = process.argv.find((arg) => arg.startsWith('--screenshot='));
+const SHOT = shotArg ? shotArg.slice('--screenshot='.length) : null;
 
 const CHROME_CANDIDATES = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -81,6 +84,9 @@ async function main() {
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-extensions',
+    /* A realistic window: the default headless viewport is short enough that
+     * the panel makes different layout choices than it would on a real screen. */
+    '--window-size=1280,900',
     url,
   ];
   if (!SHOW) args.unshift('--headless=new', '--disable-gpu');
@@ -191,6 +197,23 @@ async function main() {
 
     const report = frame.result?.result?.value;
     if (!report) throw new Error('harness never reported: ' + JSON.stringify(frame.result));
+
+    /* Capture the finished page, so a layout change can be looked at rather
+     * than inferred from assertions about box geometry. */
+    if (SHOT) {
+      await send('Emulation.setDeviceMetricsOverride', {
+        width: 1280,
+        height: 800,
+        deviceScaleFactor: 2,
+        mobile: false,
+      });
+      const shot = await send('Page.captureScreenshot', { format: 'png' });
+      const data = shot.result?.data;
+      if (data) {
+        await writeFile(SHOT, Buffer.from(data, 'base64'));
+        console.log('screenshot: ' + SHOT);
+      }
+    }
 
     console.log(report.out.trim());
     if (pageErrors.length) {

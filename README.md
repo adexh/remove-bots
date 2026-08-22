@@ -123,6 +123,26 @@ The button remounts itself if Meet re-renders its header and drops it, and the
 panel refuses to dismiss while a scan or removal is in flight, because our own
 automation clicks land outside the panel and would otherwise close it.
 
+### A crowded meeting
+
+Bots accumulate. Past a handful the panel would have grown past the screen and
+taken the Remove button with it, so:
+
+- The panel is a flex column. Only the **list** scrolls; the header, summary,
+  search box and footer stay put, so Remove is always reachable.
+- Its height is whatever fits **below the button**, not a flat `70vh`, and if the
+  button sits low (the floating fallback lives near the bottom of the window) the
+  panel opens **upwards** instead. It re-anchors on window resize.
+- A **search box** appears once there are more than eight participants, filtering
+  by name.
+
+Filtering deliberately does not change what is selected, since that would make
+Remove mean something different depending on what you had typed. Two
+consequences, both handled: **Select all** applies to the rows the search is
+showing, and if ticked bots are hidden by the current query the count says so
+(`3 selected (50 hidden by search)`), so Remove can never quietly take out
+someone off-screen.
+
 ### Where the button goes
 
 It must **stack with** Meet's existing controls, never float on top of them. The
@@ -272,8 +292,20 @@ pnpm test:names          # 56: the name classifier
 pnpm test:labels         # 13: Meet's selector and label tables
 pnpm test:dom            # 35: the real UI driven in headless Chrome
 pnpm test:dom:bare       # 11: placement when Meet has rendered nothing yet
+pnpm test:dom:many       # 21: 50 bots, scrolling and search
 pnpm test:dom:show       # the main scenario in a visible browser
+pnpm test:dom:many:show  # 50 bots in a visible browser, to look at it
 ```
+
+Any scenario also takes `--screenshot=<file>`:
+
+```sh
+node test/run-dom.mjs --page=fake-meet-many.html --screenshot=look.png
+```
+
+That is worth using rather than trusting geometry assertions. It is what caught
+the panel running off the bottom of the screen: every assertion passed, and the
+picture showed the Remove button half off the viewport.
 
 The first two import `lib/` modules directly in Node, which is possible because
 nothing in `lib/` touches the DOM at import time or imports from `wxt`.
@@ -300,6 +332,11 @@ chip, and falls back when the grid is squashed to give it no room.
 `test/fake-meet-bare.html` runs the same stub with nothing to dock beside, which
 is what exercises the waiting, the floating fallback and the relocation. Those
 paths are unreachable in the main scenario, where a control is always available.
+
+`test/fake-meet-many.html` puts 50 branded notetakers in the roster. It doubles
+as the way to eyeball the panel with a realistic pile of bots in it, which is why
+it is a harness page rather than dummy data wired into the extension: nothing
+fake ships.
 
 The suites are mutation-tested: reverting any of the fixes they cover, in the
 Meet adapter or the UI, makes them fail loudly, so they are not passing
