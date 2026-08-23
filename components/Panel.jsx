@@ -123,9 +123,9 @@ export function Panel({ anchorRect }) {
         </div>
       )}
 
-      {/* Outside the warn block: hiding is done from the warning, but what is
-          hidden must stay visible here even after "Try anyway" stands it down. */}
-      {state.role === 'guest' && hidden > 0 ? (
+      {/* Whatever the seat: anything hidden stays announced here, with the
+          way back, until it is shown again. */}
+      {hidden > 0 ? (
         <div className="notice">
           <p>
             {hidden === 1
@@ -219,21 +219,19 @@ export function Panel({ anchorRect }) {
       </div>
 
       <div className="foot">
-        {/* Guests get Hide beside Remove: same targets, but this one only
-            touches their own view, so it stays live while Remove is held back. */}
-        {state.role === 'guest' ? (
-          <button
-            type="button"
-            className="secondary"
-            disabled={state.running || state.scanning || chosen.length === 0}
-            onClick={hideSelected}
-          >
-            {chosen.length
-              ? 'Hide ' + chosen.length + (chosen.length === 1 ? ' tile' : ' tiles')
-              : 'Hide tiles'}
-            <sup className="beta">Beta</sup>
-          </button>
-        ) : null}
+        {/* Hide sits beside Remove for every seat: it only touches this
+            user's own view, so it stays live even when Remove is held back. */}
+        <button
+          type="button"
+          className="secondary"
+          disabled={state.running || state.scanning || chosen.length === 0}
+          onClick={hideSelected}
+        >
+          {chosen.length
+            ? 'Hide ' + chosen.length + (chosen.length === 1 ? ' tile' : ' tiles')
+            : 'Hide tiles'}
+          <sup className="beta">Beta</sup>
+        </button>
         <button
           type="button"
           className="primary"
