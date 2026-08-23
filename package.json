@@ -9,6 +9,7 @@
     "dev": "wxt",
     "build:dev": "wxt build -m development",
     "play": "vite --host 127.0.0.1 --port 5174 --open /test/fake-meet-manual.html",
+    "play:clone": "pnpm --dir meet-clone dev",
     "build": "wxt build",
     "zip": "wxt zip",
     "compile": "wxt prepare",

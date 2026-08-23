@@ -340,6 +340,14 @@ so what you are exercising is the bundle Chrome runs.
 The raw capture in `meet-temp/` is only source material for regenerating those
 three files; the fixture does not read from it and it can be deleted.
 
+`meet-clone/` is the same idea built the other way round: a small React + Vite
++ Tailwind app that plays a Meet call, rather than a captured one. It honours
+the same DOM contract (documented in `meet-clone/src/contract.md`) and the same
+scenario params (`?bots=N`, `?guest=1`, `?bare=1`), and being a live app it
+re-renders the way a framework page does, which the captured fixture cannot.
+Run it with `pnpm play:clone` (serves on http://127.0.0.1:5175) with the dev
+build of the extension loaded; development builds already match localhost.
+
 ```sh
 pnpm build:dev   # a development build, self-contained
 pnpm play        # serves the repo and opens the page on 127.0.0.1:5174
