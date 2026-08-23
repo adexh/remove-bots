@@ -113,22 +113,13 @@ export function Panel({ anchorRect }) {
           <p>
             You are not the host of this meeting, so Meet will probably refuse to remove
             anyone. Ask the host to remove them, or to make you a co-host. You can also
-            hide the ticked bots&#39; tiles from your own view, without removing anyone.
+            hide the ticked bots&#39; tiles from your own view with the Hide button below,
+            without removing anyone.
           </p>
           {state.roleWhy ? <p className="why">Read from Meet: {state.roleWhy}.</p> : null}
-          <div className="notice-actions">
-            <button type="button" className="chip" onClick={tryAnyway}>
-              Try anyway
-            </button>
-            <button
-              type="button"
-              className="chip"
-              disabled={state.running || state.scanning || chosen.length === 0}
-              onClick={hideSelected}
-            >
-              Hide their tiles instead
-            </button>
-          </div>
+          <button type="button" className="chip" onClick={tryAnyway}>
+            Try anyway
+          </button>
         </div>
       )}
 
@@ -228,6 +219,21 @@ export function Panel({ anchorRect }) {
       </div>
 
       <div className="foot">
+        {/* Guests get Hide beside Remove: same targets, but this one only
+            touches their own view, so it stays live while Remove is held back. */}
+        {state.role === 'guest' ? (
+          <button
+            type="button"
+            className="secondary"
+            disabled={state.running || state.scanning || chosen.length === 0}
+            onClick={hideSelected}
+          >
+            {chosen.length
+              ? 'Hide ' + chosen.length + (chosen.length === 1 ? ' tile' : ' tiles')
+              : 'Hide tiles'}
+            <sup className="beta">Beta</sup>
+          </button>
+        ) : null}
         <button
           type="button"
           className="primary"

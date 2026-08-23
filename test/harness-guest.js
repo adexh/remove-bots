@@ -65,7 +65,7 @@ import * as meet from '../lib/meet.js';
       return (row.getAttribute('data-id') || '').slice(-3) === key;
     })[0] || null;
   }
-  /* A chip by its wording, because the warn block holds more than one. */
+  /* A chip by its wording, not by position, which is free to change. */
   function chipIn(node, pattern) {
     if (!node) return null;
     return Array.prototype.filter.call(node.querySelectorAll('.chip'), function (chip) {
@@ -120,10 +120,15 @@ import * as meet from '../lib/meet.js';
       'the bots are still ticked, so one click is enough after the override');
 
     /* ---- hiding tiles from this seat's own view ---- */
-    var hideChip = chipIn(warning(), /Hide their tiles/i);
-    check(!!hideChip, 'the warning also offers to hide the tiles instead');
-    if (hideChip) {
-      hideChip.click();
+    var hideButton = panel().querySelector('.foot .secondary');
+    check(!!hideButton && /Hide/.test(hideButton.textContent) &&
+      !!(hideButton.compareDocumentPosition(removeButton()) & Node.DOCUMENT_POSITION_FOLLOWING),
+      'the footer offers Hide, sitting to the left of Remove');
+    var beta = hideButton && hideButton.querySelector('sup');
+    check(!!beta && /beta/i.test(beta.textContent),
+      'the Hide label wears a superscript Beta tag');
+    if (hideButton) {
+      hideButton.click();
 
       var hidden = await until(function () { return tileHidden('114') ? true : null; }, 4000);
       check(!!hidden, "hiding turns the bot's main-view tile off (display: none)");
