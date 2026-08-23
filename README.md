@@ -67,6 +67,13 @@ policy the listing links to is [PRIVACY.md](PRIVACY.md). The version in
 package.json is the version WXT stamps into the manifest, so bump it there
 before every upload.
 
+Releases cut themselves: merge main into the `release` branch and push, and
+a GitHub Action (`.github/workflows/release.yml`) runs the Node test suites,
+builds the zip, tags `v<version>` from package.json, and publishes a GitHub
+release with the zip attached and notes built from the commit subjects since
+the previous tag. It refuses to re-release an existing version, so the bump
+comes first.
+
 ## How it works
 
 WXT owns `entrypoints/`; React renders the UI; everything else is plain ES
