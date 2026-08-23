@@ -72,7 +72,9 @@ a GitHub Action (`.github/workflows/release.yml`) runs the Node test suites,
 builds the zip, tags `v<version>` from package.json, and publishes a GitHub
 release with the zip attached and notes built from the commit subjects since
 the previous tag. It refuses to re-release an existing version, so the bump
-comes first.
+comes first. A PR aimed at `release` runs the full test suite and a
+production build in CI (`.github/workflows/ci.yml`) before any of that, so a
+merge there can only carry green code.
 
 ## How it works
 

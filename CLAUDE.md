@@ -64,6 +64,8 @@ locally. Node 22+, pnpm. README is the canonical doc; keep it in sync
   `release` branch; .github/workflows/release.yml tags v<version>, gates on
   the Node suites, attaches build/remove-meeting-bots-<version>-chrome.zip,
   notes from commit subjects. It refuses an existing tag.
+- PRs targeting `release` run full CI (.github/workflows/ci.yml): all six
+  suites in headless Chrome plus a production build and zip.
 
 ## Publishing
 

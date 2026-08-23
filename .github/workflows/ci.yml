@@ -1,0 +1,39 @@
+# Run the whole test suite on every PR aimed at the release branch, so a
+# merge there (which cuts a release) can only carry green code.
+#
+# The DOM suites drive real headless Chrome; test/run-dom.mjs finds the
+# runner's preinstalled browser at /usr/bin/google-chrome on its own. A
+# production build and zip round out the check, since that artifact is what
+# the release workflow will ship.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [release]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Test, all six suites
+        run: pnpm test
+
+      - name: Production build and zip
+        run: pnpm build && pnpm zip
