@@ -66,6 +66,8 @@ locally. Node 22+, pnpm. README is the canonical doc; keep it in sync
   notes from commit subjects. It refuses an existing tag.
 - PRs targeting `release` run full CI (.github/workflows/ci.yml): all six
   suites in headless Chrome plus a production build and zip.
+- CodeQL (.github/workflows/codeql.yml) scans JS on main pushes, release PRs,
+  and weekly; captured-Meet fixtures are excluded from analysis.
 
 ## Publishing
 
