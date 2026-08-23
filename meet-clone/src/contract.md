@@ -34,4 +34,12 @@ may "improve" them away:
    them must never open the People panel.
 8. The app shell is a `<main>`, so the extension's overlay scan skips it.
 9. Scenario query params, same as the other fixtures: `?bots=N` extra bots,
-   `?guest=1` you are not the host, `?bare=1` header renders 4s late.
+   `?users=N` extra human guests, `?guest=1` you are not the host,
+   `?bare=1` header renders 4s late.
+10. **The tester bar** at the top of the shell reshapes the scenario live
+    (host toggle, user count, bot count) and mirrors it into the URL via
+    `history.replaceState`, so a reload replays the same scenario. It is
+    tester chrome, not Meet UI: it carries no `role="region"`,
+    `role="button"`, `aria-haspopup`, or any accessible name containing
+    "People", so the extension can never mistake it for a Meet control.
+    Changing a control rebuilds the whole cast, which resets prior removals.

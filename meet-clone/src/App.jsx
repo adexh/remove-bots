@@ -7,6 +7,7 @@
  * the app shell from being mistaken for a portalled menu.
  */
 import { useCall } from './state/useCall.js';
+import { TesterBar } from './components/TesterBar.jsx';
 import { TopBar } from './components/TopBar.jsx';
 import { ChipGrid } from './components/ChipGrid.jsx';
 import { TileGrid } from './components/TileGrid.jsx';
@@ -18,6 +19,11 @@ export function App() {
 
   return (
     <main className="flex h-full flex-col bg-shell font-sans text-on-surface">
+      {/* Tester chrome, not part of the Meet clone itself: reshapes the
+          scenario live. Inside <main> so the extension's overlay scan skips
+          it along with the rest of the shell. */}
+      <TesterBar scenario={call.scenario} onUpdate={call.updateScenario} />
+
       {/* The header. Meet keeps the notification-and-actions chips at the TOP
           right of the call, not in the control bar, and the extension names
           this dock "header" accordingly. Meet builds it after the call view;

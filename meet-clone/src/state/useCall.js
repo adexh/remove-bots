@@ -2,11 +2,11 @@
  * All call state in one hook, owned by App and passed down as props, so the
  * pieces built by different hands cannot disagree about who is in the call.
  */
-import { useMemo, useState, useEffect } from 'react';
-import { buildCast, readScenario } from '../data.js';
+import { useState, useEffect } from 'react';
+import { buildCast, readScenario, writeScenario } from '../data.js';
 
 export function useCall() {
-  const scenario = useMemo(readScenario, []);
+  const [scenario, setScenario] = useState(readScenario);
   const [people, setPeople] = useState(() => buildCast(scenario));
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -20,8 +20,22 @@ export function useCall() {
 
   const drop = (id) => setPeople((prev) => prev.filter((p) => p.id !== id));
 
+  /*
+   * Live scenario edits from the tester bar: merge, mirror to the URL, and
+   * rebuild the cast from scratch. Rebuilding forgets earlier removals, which
+   * is what a tester wants, a clean take of the new scenario. Deliberately
+   * leaves headerReady alone so toggling bare never replays the join delay.
+   */
+  const updateScenario = (partial) => {
+    const next = { ...scenario, ...partial };
+    setScenario(next);
+    writeScenario(next);
+    setPeople(buildCast(next));
+  };
+
   return {
     scenario,
+    updateScenario,
     people,
     panelOpen,
     headerReady,
