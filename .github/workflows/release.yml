@@ -1,0 +1,81 @@
+# Cut a release whenever main is merged into the `release` branch.
+#
+# The version is whatever package.json says, so a release is two steps:
+# bump the version on main, then merge main into release and push. The
+# workflow refuses to run twice for the same version rather than clobbering
+# the existing tag.
+#
+# Only the Node-only suites gate the release here; the DOM suites drive a
+# real headless Chrome and stay a local, pre-merge habit.
+
+name: Release
+
+on:
+  push:
+    branches: [release]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history and tags, for the previous-tag lookup and the notes.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Read the version, refuse a repeat
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists. Bump the version in package.json on main, then merge again." >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: pnpm test:names && pnpm test:labels
+
+      - name: Build and zip
+        run: pnpm build && pnpm zip
+
+      - name: Write release notes from the commits
+        run: |
+          LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          RANGE=${LAST:+$LAST..HEAD}
+          {
+            echo "## What changed"
+            echo
+            git log $RANGE --no-merges --pretty=format:'- %s'
+            echo
+            echo
+            if [ -n "$LAST" ]; then
+              echo "Full diff: [\`$LAST...${{ steps.version.outputs.tag }}\`](https://github.com/${{ github.repository }}/compare/$LAST...${{ steps.version.outputs.tag }})"
+            fi
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "build/remove-meeting-bots-${{ steps.version.outputs.version }}-chrome.zip" \
+            --title "Remove Meeting Bots ${{ steps.version.outputs.tag }}" \
+            --notes-file release-notes.md \
+            --target "$GITHUB_SHA"

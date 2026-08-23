@@ -120,8 +120,28 @@ import { mount } from '../lib/ui.js';
     check(!panel().querySelector('.notice.warn'),
       'no not-the-host warning: our own row carries the host badge');
     check(!panel().querySelector('.primary').disabled, 'Remove is live for a host');
+    var hideButton = panel().querySelector('.foot .secondary');
+    check(!!hideButton && /Hide/.test(hideButton.textContent) &&
+      /beta/i.test(textOf(hideButton, 'sup')),
+      'Hide (Beta) is offered to a host too, beside Remove');
 
     check(!!rowFor('114') && !!rowFor('115') && !!rowFor('117'), 'all three bots are listed');
+
+    /* ---- your own bots get top billing ---- */
+    var heads = panel().querySelectorAll('.section-head');
+    check(heads.length === 2 && /Your bots/.test(heads[0].textContent) &&
+      /Other bots/.test(heads[1].textContent),
+      'the list splits into "Your bots" and "Other bots"');
+    function inSection(head, row) {
+      return !!(row && head &&
+        (head.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+        (heads.length < 2 || head === heads[1] ||
+          (row.compareDocumentPosition(heads[1]) & Node.DOCUMENT_POSITION_FOLLOWING)));
+    }
+    check(inSection(heads[0], rowFor('114')) && inSection(heads[0], rowFor('115')),
+      "Adesh's own notetakers sit under Your bots");
+    check(inSection(heads[1], rowFor('117')),
+      "and Sarah (Notes), someone else's, under Other bots");
     check(textOf(rowFor('114'), '.row-name').indexOf("Adesh's Fathom Notetaker") === 0,
       'possessive bot name rendered clean: "' + textOf(rowFor('114'), '.row-name') + '"');
     check(textOf(rowFor('114'), '.tag') === 'known bot', 'Fathom tagged as a known bot');

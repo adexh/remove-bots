@@ -65,6 +65,28 @@ import * as meet from '../lib/meet.js';
       return (row.getAttribute('data-id') || '').slice(-3) === key;
     })[0] || null;
   }
+  /* A chip by its wording, not by position, which is free to change. */
+  function chipIn(node, pattern) {
+    if (!node) return null;
+    return Array.prototype.filter.call(node.querySelectorAll('.chip'), function (chip) {
+      return pattern.test(chip.textContent);
+    })[0] || null;
+  }
+  function tileOf(key) {
+    return document.querySelector('.oZRSLe[data-participant-id="' + CSS.escape(harness.idOf(key)) + '"]');
+  }
+  function tileHidden(key) {
+    var tile = tileOf(key);
+    return !!tile && getComputedStyle(tile).display === 'none';
+  }
+  function hideStyle() { return document.getElementById('remove-bots-hidden-tiles'); }
+  function hiddenNotice() {
+    var p = panel();
+    if (!p) return null;
+    return Array.prototype.filter.call(p.querySelectorAll('.notice:not(.warn)'), function (node) {
+      return /hidden/i.test(node.textContent);
+    })[0] || null;
+  }
 
   (async function run() {
     var mounted = await until(trigger, 9000);
@@ -97,8 +119,53 @@ import * as meet from '../lib/meet.js';
     check(!!rowFor('114') && rowFor('114').querySelector('input').checked,
       'the bots are still ticked, so one click is enough after the override');
 
+    /* ---- hiding tiles from this seat's own view ---- */
+    var hideButton = panel().querySelector('.foot .secondary');
+    check(!!hideButton && /Hide/.test(hideButton.textContent) &&
+      !!(hideButton.compareDocumentPosition(removeButton()) & Node.DOCUMENT_POSITION_FOLLOWING),
+      'the footer offers Hide, sitting to the left of Remove');
+    var beta = hideButton && hideButton.querySelector('sup');
+    check(!!beta && /beta/i.test(beta.textContent),
+      'the Hide label wears a superscript Beta tag');
+    if (hideButton) {
+      hideButton.click();
+
+      var hidden = await until(function () { return tileHidden('114') ? true : null; }, 4000);
+      check(!!hidden, "hiding turns the bot's main-view tile off (display: none)");
+      check(!!tileOf('113') && getComputedStyle(tileOf('113')).display !== 'none',
+        'our own tile is left alone');
+
+      var rosterRow = meet.findRow(harness.idOf('114'));
+      check(!!rosterRow && getComputedStyle(rosterRow).display !== 'none',
+        'the roster row for the hidden bot is untouched');
+
+      /* A framework page re-renders: the rule is keyed on the participant id
+       * attribute, so the same id on a freshly attached node must stay hidden. */
+      var tile = tileOf('114');
+      var tileParent = tile && tile.parentNode;
+      if (tile && tileParent) {
+        tile.remove();
+        tileParent.appendChild(tile);
+      }
+      check(tileHidden('114'), 'a re-rendered tile with the same id stays hidden');
+
+      var noted = await until(hiddenNotice, 4000);
+      check(!!noted, 'the panel says tiles are hidden: "' +
+        (noted ? noted.textContent.replace(/\s+/g, ' ').trim().slice(0, 90) : '') + '"');
+
+      var showAgain = chipIn(noted, /Show them again/i);
+      check(!!showAgain, 'and offers "Show them again"');
+      if (showAgain) {
+        showAgain.click();
+        var restored = await until(function () {
+          return !tileHidden('114') && !hideStyle() ? true : null;
+        }, 4000);
+        check(!!restored, 'showing again restores the tile and removes the injected stylesheet');
+      }
+    }
+
     /* ---- the override ---- */
-    var anyway = warning() && warning().querySelector('.chip');
+    var anyway = chipIn(warning(), /Try anyway/i);
     check(!!anyway && /Try anyway/.test(anyway.textContent), 'offers "Try anyway"');
     if (!anyway) return finish();
     anyway.click();

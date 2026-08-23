@@ -1,0 +1,35 @@
+# CodeQL scanning, on PRs aimed at release and nowhere else: all CI in this
+# repo runs only there, never on push or on a schedule.
+#
+# The captured-Meet fixtures are excluded: test/meet-real-body.js is a saved
+# copy of Google's own minified page, and findings in it are not ours to fix.
+
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [release]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          config: |
+            paths-ignore:
+              - test/meet-real-body.js
+              - test/meet-real.css
+              - meet-temp
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:javascript-typescript'

@@ -1,8 +1,9 @@
 {
-  "name": "remove-bots-for-google-meet",
+  "name": "remove-meeting-bots",
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.8.0",
   "description": "Find AI notetaker bots in a Google Meet call and remove them all in one click.",
   "license": "MIT",
   "scripts": {

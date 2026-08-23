@@ -1,6 +1,8 @@
 import { ParticipantRow } from './ParticipantRow.jsx';
 import {
   allowed,
+  hiddenCount,
+  hideSelected,
   matches,
   openOptions,
   removableBots,
@@ -11,6 +13,7 @@ import {
   setOpen,
   setQuery,
   tryAnyway,
+  unhideTiles,
 } from '../lib/store.js';
 import { useStore } from './useStore.js';
 
@@ -66,6 +69,9 @@ export function Panel({ anchorRect }) {
   const allOthers = state.participants.filter((p) => !p.isBot);
 
   const bots = allBots.filter((p) => matches(p, state.query));
+  /* Yours on top: scan() stamps `owned` on bots named possessively after you. */
+  const mine = bots.filter((p) => p.owned);
+  const rest = bots.filter((p) => !p.owned);
   const others = allOthers.filter((p) => matches(p, state.query));
   const filtering = !!state.query.trim();
 
@@ -79,6 +85,7 @@ export function Panel({ anchorRect }) {
 
   const showSearch = state.participants.length > SEARCH_THRESHOLD;
   const canRemove = allowed();
+  const hidden = hiddenCount();
 
   return (
     <div className="panel" style={place(anchorRect)}>
@@ -108,7 +115,9 @@ export function Panel({ anchorRect }) {
         <div className="notice warn">
           <p>
             You are not the host of this meeting, so Meet will probably refuse to remove
-            anyone. Ask the host to remove them, or to make you a co-host.
+            anyone. Ask the host to remove them, or to make you a co-host. You can also
+            hide the ticked bots&#39; tiles from your own view with the Hide button below,
+            without removing anyone.
           </p>
           {state.roleWhy ? <p className="why">Read from Meet: {state.roleWhy}.</p> : null}
           <button type="button" className="chip" onClick={tryAnyway}>
@@ -116,6 +125,21 @@ export function Panel({ anchorRect }) {
           </button>
         </div>
       )}
+
+      {/* Whatever the seat: anything hidden stays announced here, with the
+          way back, until it is shown again. */}
+      {hidden > 0 ? (
+        <div className="notice">
+          <p>
+            {hidden === 1
+              ? '1 bot tile hidden from your view. It is still in the call, only you stop seeing it.'
+              : hidden + ' bot tiles hidden from your view. They are still in the call, only you stop seeing them.'}
+          </p>
+          <button type="button" className="chip" onClick={unhideTiles}>
+            {hidden === 1 ? 'Show it again' : 'Show them again'}
+          </button>
+        </div>
+      ) : null}
 
       {showSearch ? (
         <div className="search">
@@ -156,17 +180,39 @@ export function Panel({ anchorRect }) {
                 ) : null}
               </span>
             </div>
-            <ul>
-              {bots.map((person) => (
-                <ParticipantRow
-                  key={person.id}
-                  person={person}
-                  checked={!!state.selected[person.id]}
-                  status={state.statuses[person.id]}
-                  running={state.running}
-                />
-              ))}
-            </ul>
+            {/* A section per provenance, but only once there is something to
+                separate: your own bots are the ones you can also stop at the
+                source, so they get top billing. */}
+            {mine.length ? <h3 className="section-head">Your bots</h3> : null}
+            {mine.length ? (
+              <ul>
+                {mine.map((person) => (
+                  <ParticipantRow
+                    key={person.id}
+                    person={person}
+                    checked={!!state.selected[person.id]}
+                    status={state.statuses[person.id]}
+                    running={state.running}
+                    hidden={!!(state.hidden && state.hidden[person.id])}
+                  />
+                ))}
+              </ul>
+            ) : null}
+            {mine.length && rest.length ? <h3 className="section-head">Other bots</h3> : null}
+            {rest.length ? (
+              <ul>
+                {rest.map((person) => (
+                  <ParticipantRow
+                    key={person.id}
+                    person={person}
+                    checked={!!state.selected[person.id]}
+                    status={state.statuses[person.id]}
+                    running={state.running}
+                    hidden={!!(state.hidden && state.hidden[person.id])}
+                  />
+                ))}
+              </ul>
+            ) : null}
           </>
         ) : null}
 
@@ -188,6 +234,7 @@ export function Panel({ anchorRect }) {
                   checked={!!state.selected[person.id]}
                   status={state.statuses[person.id]}
                   running={state.running}
+                  hidden={!!(state.hidden && state.hidden[person.id])}
                 />
               ))}
             </ul>
@@ -196,6 +243,19 @@ export function Panel({ anchorRect }) {
       </div>
 
       <div className="foot">
+        {/* Hide sits beside Remove for every seat: it only touches this
+            user's own view, so it stays live even when Remove is held back. */}
+        <button
+          type="button"
+          className="secondary"
+          disabled={state.running || state.scanning || chosen.length === 0}
+          onClick={hideSelected}
+        >
+          {chosen.length
+            ? 'Hide ' + chosen.length + (chosen.length === 1 ? ' bot' : ' bots')
+            : 'Hide bots'}
+          <sup className="beta">Beta</sup>
+        </button>
         <button
           type="button"
           className="primary"
