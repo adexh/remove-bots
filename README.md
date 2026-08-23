@@ -19,6 +19,13 @@ Meet is not offering you its host controls, the panel says so and holds the
 Remove button back, with a **Try anyway** override for the case where host
 management is off and any participant may remove another.
 
+When you are not the host, the same warning offers **Hide their tiles
+instead**: the ticked bots' video tiles disappear from the main view, for you
+and nobody else. It is a stylesheet in your own browser, keyed on the tile's
+participant id, so it holds when Meet re-renders the grid and it changes
+nothing for anyone else in the call. The bots stay in the meeting and in the
+roster; **Show them again** in the panel puts the tiles back.
+
 ## Getting started
 
 Built with [WXT](https://wxt.dev). Requires Node 22+ and pnpm.
@@ -293,13 +300,13 @@ to succeed. The usual causes are:
 Six suites, no test framework and nothing extra to install:
 
 ```sh
-pnpm test                # all of it, 178 assertions
+pnpm test                # all of it, 186 assertions
 pnpm test:names          # 56: the name classifier
 pnpm test:labels         # 17: Meet's selector and label tables
 pnpm test:dom            # 45: the real UI driven in headless Chrome
 pnpm test:dom:bare       # 19: placement when Meet has rendered nothing yet
 pnpm test:dom:many       # 21: 50 bots, scrolling and search
-pnpm test:dom:guest      # 20: the same call from a guest's seat
+pnpm test:dom:guest      # 28: the same call from a guest's seat
 pnpm test:dom:show       # the main scenario in a visible browser
 pnpm test:dom:many:show  # 50 bots in a visible browser, to look at it
 pnpm test:dom:guest:show # the guest seat in a visible browser

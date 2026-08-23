@@ -1,6 +1,8 @@
 import { ParticipantRow } from './ParticipantRow.jsx';
 import {
   allowed,
+  hiddenCount,
+  hideSelected,
   matches,
   openOptions,
   removableBots,
@@ -11,6 +13,7 @@ import {
   setOpen,
   setQuery,
   tryAnyway,
+  unhideTiles,
 } from '../lib/store.js';
 import { useStore } from './useStore.js';
 
@@ -79,6 +82,7 @@ export function Panel({ anchorRect }) {
 
   const showSearch = state.participants.length > SEARCH_THRESHOLD;
   const canRemove = allowed();
+  const hidden = hiddenCount();
 
   return (
     <div className="panel" style={place(anchorRect)}>
@@ -108,14 +112,40 @@ export function Panel({ anchorRect }) {
         <div className="notice warn">
           <p>
             You are not the host of this meeting, so Meet will probably refuse to remove
-            anyone. Ask the host to remove them, or to make you a co-host.
+            anyone. Ask the host to remove them, or to make you a co-host. You can also
+            hide the ticked bots&#39; tiles from your own view, without removing anyone.
           </p>
           {state.roleWhy ? <p className="why">Read from Meet: {state.roleWhy}.</p> : null}
-          <button type="button" className="chip" onClick={tryAnyway}>
-            Try anyway
-          </button>
+          <div className="notice-actions">
+            <button type="button" className="chip" onClick={tryAnyway}>
+              Try anyway
+            </button>
+            <button
+              type="button"
+              className="chip"
+              disabled={state.running || state.scanning || chosen.length === 0}
+              onClick={hideSelected}
+            >
+              Hide their tiles instead
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Outside the warn block: hiding is done from the warning, but what is
+          hidden must stay visible here even after "Try anyway" stands it down. */}
+      {state.role === 'guest' && hidden > 0 ? (
+        <div className="notice">
+          <p>
+            {hidden === 1
+              ? '1 bot tile hidden from your view. It is still in the call, only you stop seeing it.'
+              : hidden + ' bot tiles hidden from your view. They are still in the call, only you stop seeing them.'}
+          </p>
+          <button type="button" className="chip" onClick={unhideTiles}>
+            {hidden === 1 ? 'Show it again' : 'Show them again'}
+          </button>
+        </div>
+      ) : null}
 
       {showSearch ? (
         <div className="search">
@@ -164,6 +194,7 @@ export function Panel({ anchorRect }) {
                   checked={!!state.selected[person.id]}
                   status={state.statuses[person.id]}
                   running={state.running}
+                  hidden={!!(state.hidden && state.hidden[person.id])}
                 />
               ))}
             </ul>
@@ -188,6 +219,7 @@ export function Panel({ anchorRect }) {
                   checked={!!state.selected[person.id]}
                   status={state.statuses[person.id]}
                   running={state.running}
+                  hidden={!!(state.hidden && state.hidden[person.id])}
                 />
               ))}
             </ul>
