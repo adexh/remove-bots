@@ -64,10 +64,10 @@ locally. Node 22+, pnpm. README is the canonical doc; keep it in sync
   `release` branch; .github/workflows/release.yml tags v<version>, gates on
   the Node suites, attaches build/remove-meeting-bots-<version>-chrome.zip,
   notes from commit subjects. It refuses an existing tag.
-- PRs targeting `release` run full CI (.github/workflows/ci.yml): all six
-  suites in headless Chrome plus a production build and zip.
-- CodeQL (.github/workflows/codeql.yml) scans JS on main pushes, release PRs,
-  and weekly; captured-Meet fixtures are excluded from analysis.
+- ALL CI runs only on PRs targeting `release`, never on push or schedule:
+  ci.yml (six suites in headless Chrome + production build/zip) and
+  codeql.yml (JS scan, captured-Meet fixtures excluded). Dependabot watches
+  npm (root + meet-clone) and actions, weekly, minor/patch grouped.
 
 ## Publishing
 

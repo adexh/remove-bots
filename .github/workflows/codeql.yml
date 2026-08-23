@@ -1,5 +1,5 @@
-# CodeQL scanning: every push to main, every PR aimed at release, and a
-# weekly sweep for newly published queries against unchanged code.
+# CodeQL scanning, on PRs aimed at release and nowhere else: all CI in this
+# repo runs only there, never on push or on a schedule.
 #
 # The captured-Meet fixtures are excluded: test/meet-real-body.js is a saved
 # copy of Google's own minified page, and findings in it are not ours to fix.
@@ -7,12 +7,8 @@
 name: CodeQL
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [release]
-  schedule:
-    - cron: '31 6 * * 1'
 
 jobs:
   analyze:
