@@ -327,10 +327,18 @@ nothing in `lib/` touches the DOM at import time or imports from `wxt`.
 
 ### Testing it by hand, without a real call
 
-`test/fake-meet-manual.html` is the same fake Meet with no harness attached, for
-driving the real extension yourself. Everything you see beyond the fake roster
-comes from the installed content script, so what you are exercising is the
-bundle Chrome runs.
+`test/fake-meet-manual.html` is a real Meet page for driving the real extension
+yourself: `test/meet-real.css` is Meet's own stylesheet and
+`test/meet-real-body.js` the body of a real call, both extracted from a DOM
+capture of an actual meeting (Aug 2026 build), so the page is pixel-styled by
+Meet itself. What the capture could not contain, the roster, the row menus and
+the confirm step (the People panel was closed when the page was saved), is
+wired in by `test/harness-real.js` using the class names recorded from the live
+panel. The Bots button and its panel come from the installed content script,
+so what you are exercising is the bundle Chrome runs.
+
+The raw capture in `meet-temp/` is only source material for regenerating those
+three files; the fixture does not read from it and it can be deleted.
 
 ```sh
 pnpm build:dev   # a development build, self-contained
