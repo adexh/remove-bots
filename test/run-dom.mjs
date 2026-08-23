@@ -165,18 +165,21 @@ async function main() {
         new Promise((done) => {
           const started = Date.now();
           (function poll() {
+            /* The evaluation can land before the page has a <body> (seen on
+             * CI runners, where CDP wins the race against the parser), so a
+             * throw here means "still assembling", never "give up". */
+            let out = null;
+            let flag = null;
             try {
-              const out = document.getElementById('out');
-              const flag = document.body.getAttribute('data-harness');
-              if (flag && out) return done({ flag, out: out.textContent });
-              if (Date.now() - started > 90000) {
-                return done({
-                  flag: 'timeout',
-                  out: out ? out.textContent : 'no #out element; page is ' + location.href,
-                });
-              }
-            } catch (err) {
-              return done({ flag: 'error', out: 'poll threw: ' + err.message });
+              out = document.getElementById('out');
+              flag = document.body ? document.body.getAttribute('data-harness') : null;
+            } catch (err) { /* keep polling */ }
+            if (flag && out) return done({ flag, out: out.textContent });
+            if (Date.now() - started > 90000) {
+              return done({
+                flag: 'timeout',
+                out: out ? out.textContent : 'no #out element; page is ' + location.href,
+              });
             }
             setTimeout(poll, 200);
           })();
