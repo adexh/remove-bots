@@ -8,6 +8,12 @@ right. Click it and you get the list of bots it found, every one ticked. Untick
 any you want to keep, hit **Remove**, and it walks the participant menu for each
 of them while you watch the status update live.
 
+<img src="docs/panel.png" width="344" alt="The panel in a call: 7 bots found
+out of 13 participants, your own notetakers listed first under Your bots, the
+rest under Other bots, each tagged with why it was flagged, and Hide bots
+beside Remove bots at the bottom.">
+
+
 The panel lives in the page rather than in a browser popup, so it sits where you
 are already looking and stays open while it works. The toolbar icon toggles the
 same panel if you prefer the keyboard route.
