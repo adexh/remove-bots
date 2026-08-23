@@ -23,7 +23,7 @@ function explain(person) {
   return '';
 }
 
-export function ParticipantRow({ person, checked, status, running }) {
+export function ParticipantRow({ person, checked, status, running, hidden }) {
   const tag = tagFor(person);
   const why = (status && status.message) || explain(person);
   const classes = ['row', status && status.phase === 'busy' ? 'busy' : '',
@@ -41,6 +41,7 @@ export function ParticipantRow({ person, checked, status, running }) {
         <span className="row-name">
           {person.name}
           {tag ? <span className={'tag ' + tag.cls}>{tag.label}</span> : null}
+          {hidden ? <span className="tag hidden">hidden</span> : null}
         </span>
         {why ? <span className="row-why">{why}</span> : null}
       </div>
