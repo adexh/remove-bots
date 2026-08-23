@@ -1,5 +1,5 @@
 {
-  "name": "remove-bots-for-google-meet",
+  "name": "remove-meeting-bots",
   "version": "1.0.0",
   "private": true,
   "type": "module",

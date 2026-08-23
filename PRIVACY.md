@@ -1,4 +1,4 @@
-# Privacy policy, Remove Bots for Google Meet
+# Privacy policy, Remove Meeting Bots
 
 Last updated: 23 August 2026.
 

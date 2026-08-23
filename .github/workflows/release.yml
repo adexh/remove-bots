@@ -75,7 +75,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
-            "build/remove-bots-for-google-meet-${{ steps.version.outputs.version }}-chrome.zip" \
-            --title "Remove Bots for Google Meet ${{ steps.version.outputs.tag }}" \
+            "build/remove-meeting-bots-${{ steps.version.outputs.version }}-chrome.zip" \
+            --title "Remove Meeting Bots ${{ steps.version.outputs.tag }}" \
             --notes-file release-notes.md \
             --target "$GITHUB_SHA"

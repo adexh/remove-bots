@@ -1,4 +1,4 @@
-# Remove Bots for Google Meet
+# Remove Meeting Bots
 
 A Chrome extension that finds AI notetaker bots in your Google Meet call and
 removes them all in one click.

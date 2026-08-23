@@ -5,7 +5,7 @@ the listing and the repo never drift apart.
 
 ## Name
 
-Remove Bots for Google Meet
+Remove Meeting Bots
 
 ## Short description (132 characters max)
 
@@ -89,7 +89,7 @@ controls, or hide their video tiles locally.
 ## Publishing steps
 
 1. `pnpm build` then `pnpm zip`, upload
-   `build/remove-bots-for-google-meet-<version>-chrome.zip`.
+   `build/remove-meeting-bots-<version>-chrome.zip`.
 2. Bump `version` in package.json for every new upload; WXT stamps it into
    the manifest.
 3. Fill the dashboard from this file. Expect a review delay on first submit,

@@ -27,7 +27,7 @@ export default defineConfig({
 
   /* Entrypoints are the only thing WXT scans; lib/ is plain imports. */
   manifest: {
-    name: 'Remove Bots for Google Meet',
+    name: 'Remove Meeting Bots',
     description:
       'Find AI notetaker bots in a Google Meet call and remove them all in one click.',
     permissions: ['storage', 'scripting'],
