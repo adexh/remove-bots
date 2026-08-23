@@ -60,6 +60,13 @@ pnpm build            # -> build/chrome-mv3/
 pnpm zip              # -> build/*.zip, for the Web Store
 ```
 
+Everything the Web Store dashboard asks for, the descriptions, the
+single-purpose statement, the permission justifications, and the remaining
+manual steps, lives in [store/listing.md](store/listing.md). The privacy
+policy the listing links to is [PRIVACY.md](PRIVACY.md). The version in
+package.json is the version WXT stamps into the manifest, so bump it there
+before every upload.
+
 ## How it works
 
 WXT owns `entrypoints/`; React renders the UI; everything else is plain ES
