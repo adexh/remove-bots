@@ -2,8 +2,9 @@
 
 Remove Meeting Bots: WXT Chrome MV3 extension that detects AI notetaker bots
 in a Google Meet call, removes them via Meet's own menus, or hides their tiles
-locally. Node 22+, pnpm. README is the canonical doc; keep it in sync
-(features, test counts).
+locally. Node 22+, pnpm. Docs are split: README.md is the lean user page
+(features, install, permissions), docs/DEVELOPMENT.md is the canonical dev doc
+(architecture, Meet DOM facts, testing, releases). Keep both in sync.
 
 ## Architecture rules (enforced by convention, break nothing)
 
@@ -46,7 +47,7 @@ locally. Node 22+, pnpm. README is the canonical doc; keep it in sync
   unlabelled chip, portalled attribute-less overlays, possessive bot names,
   icon-font text pollution). Scenario params: ?bots=N ?guest=1 ?bare=1.
 - Every fix gets checks that fail if reverted (suites are mutation-tested).
-- Adding checks -> update the counts in README's Testing section.
+- Adding checks -> update the counts in docs/DEVELOPMENT.md's Testing section.
 - Geometry claims: screenshot instead of trusting assertions:
   `node test/run-dom.mjs --page=<page> --screenshot=out.png`.
 - meet-clone/ is a React+Vite replica honouring meet-clone/src/contract.md;
