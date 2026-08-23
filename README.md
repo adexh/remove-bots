@@ -19,7 +19,7 @@ Meet is not offering you its host controls, the panel says so and holds the
 Remove button back, with a **Try anyway** override for the case where host
 management is off and any participant may remove another.
 
-Whether or not you are the host, a **Hide tiles** button (marked Beta) sits
+Whether or not you are the host, a **Hide bots** button (marked Beta) sits
 next to Remove: the ticked bots' video tiles disappear from the main view, for
 you and nobody else. It is a stylesheet in your own browser, keyed on the tile's
 participant id, so it holds when Meet re-renders the grid and it changes
@@ -205,6 +205,13 @@ costs a lot more, so the rules stay narrow on purpose.
 Google's own Gemini notetaker is detected but shown greyed out, because it is
 not a participant you can remove. Stop it from the Meet toolbar instead.
 
+Bots you sent yourself are listed first, under **Your bots**. Meet names a
+joining bot possessively after its owner ("Adesh's Fathom Notetaker"), so any
+bot that opens with your own display name in the possessive counts as yours,
+first name or full name, straight or curly apostrophe. They behave like any
+other row; the split only makes it obvious which notetakers are yours to stop
+at the source.
+
 ### Your own rules
 
 Open **Rules** from the popup footer, or the extension's options page:
@@ -300,10 +307,10 @@ to succeed. The usual causes are:
 Six suites, no test framework and nothing extra to install:
 
 ```sh
-pnpm test                # all of it, 188 assertions
-pnpm test:names          # 56: the name classifier
+pnpm test                # all of it, 198 assertions
+pnpm test:names          # 63: the name classifier
 pnpm test:labels         # 17: Meet's selector and label tables
-pnpm test:dom            # 46: the real UI driven in headless Chrome
+pnpm test:dom            # 49: the real UI driven in headless Chrome
 pnpm test:dom:bare       # 19: placement when Meet has rendered nothing yet
 pnpm test:dom:many       # 21: 50 bots, scrolling and search
 pnpm test:dom:guest      # 29: the same call from a guest's seat

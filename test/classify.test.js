@@ -116,6 +116,37 @@ check('empty name is not a bot', function () {
   assert.strictEqual(BOTS.classify(null).isBot, false);
 });
 
+check('a bot named possessively after you is yours', function () {
+  assert.strictEqual(BOTS.ownedBy("Adesh's Fathom Notetaker", 'Adesh Tamrakar'), true);
+  assert.strictEqual(BOTS.ownedBy("Adesh Tamrakar's Otter.ai", 'Adesh Tamrakar'), true);
+});
+
+check('the curly apostrophe Meet actually renders counts too', function () {
+  assert.strictEqual(BOTS.ownedBy('Adesh’s Fathom Notetaker', 'Adesh Tamrakar'), true);
+});
+
+check('a name already ending in s takes a bare apostrophe', function () {
+  assert.strictEqual(BOTS.ownedBy("Charles' Otter.ai", 'Charles Babbage'), true);
+});
+
+check("someone else's bot is not yours", function () {
+  assert.strictEqual(BOTS.ownedBy("Ada's Fathom Notetaker", 'Adesh Tamrakar'), false);
+  assert.strictEqual(BOTS.ownedBy('Sarah (Notes)', 'Adesh Tamrakar'), false);
+});
+
+check('your name inside the bot name is not enough, it must open it', function () {
+  assert.strictEqual(BOTS.ownedBy("Notetaker for Adesh's team", 'Adesh Tamrakar'), false);
+});
+
+check('the (You) badge on your own row does not confuse ownership', function () {
+  assert.strictEqual(BOTS.ownedBy("Adesh's Fathom Notetaker", 'Adesh Tamrakar (You)'), true);
+});
+
+check('ownership without a self name is never claimed', function () {
+  assert.strictEqual(BOTS.ownedBy("Adesh's Fathom Notetaker", ''), false);
+  assert.strictEqual(BOTS.ownedBy('', 'Adesh Tamrakar'), false);
+});
+
 console.log(pass + ' passed, ' + failures.length + ' failed');
 if (failures.length) {
   failures.forEach(function (line) { console.log('  FAIL ' + line); });
